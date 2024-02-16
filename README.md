@@ -1,10 +1,10 @@
-###################################################
+------------------------------------------------
 Developer Notes:
  *Limited experience with AWS/Python integration
  *Limited experience with Parquet 
  *Was able to test with SQL server
  *Was not able to test functionality with AWS
-####################################################
+ ------------------------------------------------
 
 
 ------------------------------------------------
