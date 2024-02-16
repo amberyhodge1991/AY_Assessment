@@ -1,0 +1,120 @@
+import boto3
+from botocore.exceptions import ClientError
+import os
+import aiohttp
+import pandas as pd
+import pyarrow.parquet as pq
+import pyarrow as pa
+from datetime import datetime
+from prefect import task, Flow
+from prefect.tasks.sql_server import SQLServerExecute
+
+# Define the SpaceX API URL
+SPACEX_API_URL = "https://api.spacexdata.com/v5/launches/latest"
+
+# Define AWS S3 bucket details
+AWS_BUCKET = "SpaceX_data"
+AWS_REGION = "US East"
+AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
+AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+
+# Define Microsoft SQL database details
+SQL_SERVER = "BZPC\SQL2022DEV"
+SQL_DATABASE = "SpaceX"
+SQL_USERNAME = "SQLUser_SpaceX"
+SQL_PASSWORD = "SQLSpaceX"
+
+# Define the SQL table creation query
+CREATE_TABLE_QUERY = """
+CREATE TABLE IF NOT EXISTS SpaceXLaunches_{year} (
+    flight_number INT PRIMARY KEY,
+    mission_name NVARCHAR(255),
+    launch_date_utc DATETIME,
+    launch_success BIT
+);
+"""
+
+# Define the SQL insert query
+INSERT_QUERY = """
+INSERT INTO SpaceXLaunches_{year} (flight_number, mission_name, launch_date_utc, launch_success)
+VALUES (?, ?, ?, ?)
+"""
+
+@task
+async def fetch_spacex_launch_data():
+    async with aiohttp.ClientSession() as session:
+        async with session.get(SPACEX_API_URL) as response:
+            response.raise_for_status()
+            return await response.json()
+
+@task
+def process_launch_data(data):
+    if not data:
+        raise ValueError("No data available")
+    # Process data and return a DataFrame
+    df = pd.DataFrame(data)
+    return df
+
+@task
+def save_parquet_file(df, year):
+    # Parquet with AWS S3
+    table = pa.Table.from_pandas(df)
+    year_str = str(year)
+    s3_path = f'spacex-data/year={year_str}/launch_data.parquet'
+
+    # Write Parquet file to local filesystem
+    local_file = f'launch_data_{year_str}.parquet'
+    pq.write_table(table, local_file)
+
+    # Upload Parquet file to S3
+    s3_client = boto3.client(
+        's3',
+        region_name=AWS_REGION,
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+    )
+    try:
+        response = s3_client.upload_file(local_file, AWS_BUCKET, s3_path)
+        print(f"Uploaded {local_file} to S3://{AWS_BUCKET}/{s3_path}")
+    except ClientError as e:
+        print(f"Error uploading file to S3: {e}")
+    finally:
+        # Clean up local Parquet file
+        try:
+            os.remove(local_file)
+            print(f"Local file {local_file} removed.")
+        except Exception as e:
+            print(f"Error removing local file: {e}")
+
+@task
+def create_and_insert_sql_table(df, year):
+    # Create a table for the year if it doesn't exist
+    sql_task = SQLServerExecute(
+        server=SQL_SERVER,
+        database=SQL_DATABASE,
+        username=SQL_USERNAME,
+        password=SQL_PASSWORD,
+        fetch='none'
+    )
+    try:
+        sql_task(query=CREATE_TABLE_QUERY.format(year=year))
+        
+        for index, row in df.iterrows():
+            sql_task(query=INSERT_QUERY.format(year=year), parameters=(
+                row['flight_number'],
+                row['mission_name'],
+                row['launch_date_utc'],
+                row['launch_success']
+            ))
+    except Exception as e:
+        print(f"Error executing SQL query: {e}")
+
+async def main():
+    data = await fetch_spacex_launch_data()
+    processed_data = process_launch_data(data)
+    save_parquet_file(processed_data, datetime.now().year)
+    create_and_insert_sql_table(processed_data, datetime.now().year)
+
+if __name__ == "__main__":
+    flow = Flow("SpaceX_Data_Pipeline")
+    flow.run()
