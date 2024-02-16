@@ -12,19 +12,21 @@ from prefect.tasks.sql_server import SQLServerExecute
 # Define the SpaceX API URL
 SPACEX_API_URL = "https://api.spacexdata.com/v5/launches/latest"
 
-# Define AWS S3 bucket details
+# Define AWS S3 bucket 
 AWS_BUCKET = "SpaceX_data"
 AWS_REGION = "US East"
 AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
 AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 
-# Define Microsoft SQL database details
+# Define Microsoft SQL database
 SQL_SERVER = "BZPC\SQL2022DEV"
 SQL_DATABASE = "SpaceX"
 SQL_USERNAME = "SQLUser_SpaceX"
 SQL_PASSWORD = "SQLSpaceX"
 
-# Define the SQL table creation query
+
+
+# SQL add table
 CREATE_TABLE_QUERY = """
 CREATE TABLE IF NOT EXISTS SpaceXLaunches_{year} (
     flight_number INT PRIMARY KEY,
@@ -34,12 +36,13 @@ CREATE TABLE IF NOT EXISTS SpaceXLaunches_{year} (
 );
 """
 
-# Define the SQL insert query
+# SQL Insert 
 INSERT_QUERY = """
 INSERT INTO SpaceXLaunches_{year} (flight_number, mission_name, launch_date_utc, launch_success)
 VALUES (?, ?, ?, ?)
 """
 
+#data fetch
 @task
 async def fetch_spacex_launch_data():
     async with aiohttp.ClientSession() as session:
@@ -47,11 +50,12 @@ async def fetch_spacex_launch_data():
             response.raise_for_status()
             return await response.json()
 
+# Process data and return a DataFrame
 @task
 def process_launch_data(data):
     if not data:
         raise ValueError("No data available")
-    # Process data and return a DataFrame
+
     df = pd.DataFrame(data)
     return df
 
