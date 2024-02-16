@@ -11,45 +11,59 @@ Developer Notes:
 ------------------------------------------------
 AWS S3 CONFIGURATION REQUIREMENTS
 ------------------------------------------------
-S3 Configuration:
+<br>S3 Configuration:
 
-Bucket Name = "SpaceX_data"
-Region  = "US East"
-Access Key= "AKIAIOSFODNN7EXAMPLE"
-Secret Access Key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+<br>Bucket Name = "SpaceX_data"
+<br>Region  = "US East"
+<br>Access Key= "AKIAIOSFODNN7EXAMPLE"
+<br>Secret Access Key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 
 
-Python Compatability Components: 
-boto3==1.18.59
-aiohttp==3.8.1
+<br>Python Compatability Components: 
+<br>boto3==1.18.59
+<br>aiohttp==3.8.1
 
-Permissions: 
-s3:PutObject
-s3:GetObject
-s3:ListBucket
+<br>Permissions: 
+<br>s3:PutObject
+<br>s3:GetObject
+<br>s3:ListBucket
 
 ------------------------------------------------
 MS SQL CONFIGURATION REQUIREMENTS
 ------------------------------------------------
-Min Compatibility: SQL Server 2022 (160)
-Allow Remote Connections -YES
-Max Query timeout
+<br>Min Compatibility: SQL Server 2022 (160)
+<br>Allow Remote Connections -YES
+<br>Max Query timeout
 
-Min Server: SQL 2022DEV 
-Server Name: BZPC\SQL2022DEV
-Database Name: SpaceX
+<br>Min Server: SQL 2022DEV 
+<br>Server Name: BZPC\SQL2022DEV
+<br>Database Name: SpaceX
 
 
-Authentication/SQL Account Configuration:
-SQL Server Authentication
-SQL Username: SQLUser_SpaceX
-SQL Password: SQLSpaceX
+<br>Authentication/SQL Account Configuration:
+<br>SQL Server Authentication
+<br>SQL Username: SQLUser_SpaceX
+<br>SQL Password: SQLSpaceX
 
-Server Role: Public
+<br>Server Role: Public
 
-Mapping: 
-DB Name: Space X
-Role: db_owner
-Schema: dbo
-Default DB: Space X
+<br>Mapping: 
+<br>DB Name: Space X
+<br>Role: db_owner
+<br>Schema: dbo
+<br>Default DB: Space X
 
+
+<br>Python Compatability Components: 
+<br>PyODBC
+
+------------------------------------------------
+Other Python Requirements
+------------------------------------------------
+<br> Python Version: 3.12.2
+<br> Libraries:
+<br> import os
+<br> aiohttp
+<br> pandas 
+<br> parquet
+<br> prefect
